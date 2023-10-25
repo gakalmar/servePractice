@@ -28,6 +28,50 @@ app.patch('/users/:userId', async (req, res) => {
     }
 });
 
+app.put('/users/:userId', async (req, res) => {
+    const data = await fs.readFile('./users.json', 'utf8');
+    const { users } = JSON.parse(data);
+    const userId = parseInt(req.params.userId);
+    const user = users.find(user => user.id === userId);
+  
+    if (user) {
+        user.name = req.body.name;
+        await fs.writeFile('./users.json', JSON.stringify({ users }), 'utf8');
+        return res.send({ state: "DONE" });
+    } else {
+        return res.status(404).send({ state: 'User not found' });
+    }
+});
+
+app.delete('/users/:userId', async (req, res) => {
+    const data = await fs.readFile('./users.json', 'utf8');
+    const { users } = JSON.parse(data);
+    const userId = parseInt(req.params.userId);
+    const user = users.find(user => user.id === userId);
+  
+    if (user) {
+        const newUsers = users.filter((x) => x !== user);
+        await fs.writeFile('./users.json', JSON.stringify({ users: newUsers }), 'utf8');
+        return res.send({ state: "DONE" });
+    } else {
+        return res.status(404).send({ state: 'User not found' });
+    }
+});
+
+app.post('/users/:userId', async (req, res) => {
+    const data = await fs.readFile('./users.json', 'utf8');
+    const { users } = JSON.parse(data);
+    const userIds = users.map(user => user.id);
+    const maxId = Math.max(...userIds);
+    const newUser = {
+      name: req.body.name,
+      id: maxId + 1
+    }
+    users.push(newUser);
+    await fs.writeFile('./users.json', JSON.stringify({ users }), 'utf8');
+    return res.send({ state: "DONE" });
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'client', 'index.html'));
 });

@@ -6,15 +6,30 @@ const usersHTML = users => `<div id="users">${users.map(user => userHTML(user)).
 const inputHTML = name => `<input placeholder="Write the name here" value="${name}">`;
 const buttonHTML = (text, method) => `<button type="submit" data-method="${method}">${text}</button>`;
 
-const formHTML = (user) => `
+// const formHTML = (user) => `
+//     <form id="form" data-id="${user.id}">
+//         ${inputHTML(user.name)}
+//         ${buttonHTML("Save", "PATCH")}
+//         ${buttonHTML("Replace", "PUT")}
+//         ${buttonHTML("Remove", "DELETE")}
+//         ${buttonHTML("Add", "POST")}
+//     </form>
+// `;
+
+const formHTML = (user, add) => `
     <form id="form" data-id="${user.id}">
         ${inputHTML(user.name)}
-        ${buttonHTML("Save", "PATCH")}
+        ${add ? buttonHTML("Add", "POST") : buttonHTML("Save", "PATCH") + buttonHTML("Replace", "PUT") + buttonHTML("Remove", "DELETE")}
     </form>
 `;
 
 const fetchData = async (url, id, method = "GET", body = {name: ""}) => {
   
+    if (id && parseInt(id) === 0 && body.name === "") {
+        console.log("Empty name is not valid when creating a new user");
+        return;
+    };
+
     try {
         const response = await fetch(id !== undefined ? `${url}/${id}` : url, method === "GET" ? {method} : {method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)} );
         return await response.json();
@@ -33,10 +48,26 @@ const handleSubmit = async e => {
     const method = e.submitter.getAttribute("data-method");
     const id = parseInt(e.target.getAttribute("data-id"));
 
-    const result = await fetchData(url, id, method, method === "PATCH" ? {name: e.target.querySelector("input").value} : {name: ""});
+    const result = await fetchData(
+        url, 
+        id, 
+        method, 
+        method === "PATCH" ? 
+            {name: e.target.querySelector("input").value} : 
+        method === "PUT" ? 
+            {name: e.target.querySelector("input").value, id} : 
+        method === "DELETE" ?
+            {id} : 
+        method === "POST" ?
+            {name: e.target.querySelector("input").value, id: 0} :
+            {name: ""}
+    );
+    
     if (result.state === "DONE") {
         const users = await fetchData(url);
         document.getElementById("users").outerHTML = usersHTML(users);
+        document.getElementById("form").outerHTML = formHTML(userData, false);
+
     }
 }
 
@@ -44,11 +75,12 @@ const main = async _ => {
     const root = document.getElementById("root");
     const users = await fetchData(url);
     root.insertAdjacentHTML("beforeend", usersHTML(users));
-    root.insertAdjacentHTML("beforeend", formHTML({id: 0, name: ""}));
+    // root.insertAdjacentHTML("beforeend", formHTML({id: 0, name: ""}));
+    root.insertAdjacentHTML("beforeend", formHTML({id: 0, name: ""}, true));
 
     window.addEventListener("input", handleInput);
-    // window.addEventListener("submit", e => handleSubmit(e));
     window.addEventListener("submit", e => handleSubmit(e));
+    // window.addEventListener("submit", e => handleSubmit(e)); // WORKS WITH BOTH!
 
 };
 
@@ -87,5 +119,3 @@ window.addEventListener("click", async event => {
         document.getElementById("form").outerHTML = formHTML(userData);
     };
 });
-
-// What is it supposed to do?

@@ -80,8 +80,6 @@ const main = async _ => {
 
     window.addEventListener("input", handleInput);
     window.addEventListener("submit", e => handleSubmit(e));
-    // window.addEventListener("submit", e => handleSubmit(e)); // WORKS WITH BOTH!
-
 };
 
 window.addEventListener("load", main);
